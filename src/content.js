@@ -6,6 +6,8 @@
     observer: null,
     scanTimer: null,
     autoReadIds: new Set(),
+    autoConversationIds: new Set(),
+    stableTimers: new WeakMap(),
     toast: null,
     pageWidgetsHidden: false
   };
@@ -139,8 +141,23 @@
     if (node.closest(`.${PANEL_CLASS}`) || node.closest(".afterai-coach-actions")) return false;
     if (node.matches && node.matches("html, body")) return false;
     if (node.matches && node.matches("main, [role='main']") && text.length > 1500) return false;
+    if (isThinkingOrStreamingNode(node, text)) return false;
     if (/^(复制|重新生成|分享|点赞|点踩|\s)+$/.test(text)) return false;
     return true;
+  }
+
+  function isThinkingOrStreamingNode(node, text) {
+    const label = [
+      node.id || "",
+      node.className || "",
+      node.getAttribute && node.getAttribute("aria-label") || "",
+      node.getAttribute && node.getAttribute("data-testid") || "",
+      node.getAttribute && node.getAttribute("data-state") || ""
+    ].join(" ").toLowerCase();
+    if (/thinking|reasoning|thought|streaming|loading|pending|generating|spinner|skeleton/.test(label)) return true;
+    if (node.closest && node.closest("[aria-busy='true'], [data-is-streaming='true'], [data-streaming='true']")) return true;
+    if (/^(思考中|正在思考|正在生成|thinking|reasoning|generating)/i.test(text.trim())) return true;
+    return false;
   }
 
   function selectBestMessageNodes(candidates) {
@@ -216,8 +233,24 @@
 
     actions.appendChild(button);
     message.appendChild(actions);
-    window.setTimeout(() => archiveDetectedConversation(message), 900);
-    window.setTimeout(() => maybeAutoRead(message, button), 1600);
+    scheduleStableProcessing(message, button);
+  }
+
+  function scheduleStableProcessing(message, button) {
+    const existing = STATE.stableTimers.get(message);
+    if (existing) window.clearTimeout(existing);
+
+    const firstText = getMessageTextWithoutCoachUi(message);
+    const timer = window.setTimeout(async () => {
+      const latestText = getMessageTextWithoutCoachUi(message);
+      if (latestText !== firstText) {
+        scheduleStableProcessing(message, button);
+        return;
+      }
+      await archiveDetectedConversation(message);
+      await maybeAutoRead(message, button);
+    }, 4200);
+    STATE.stableTimers.set(message, timer);
   }
 
   function installFallbackDock() {
@@ -285,14 +318,19 @@
     try {
       const conversation = collectConversation(message);
       if (!conversation.answer || conversation.answer.length < 80) return;
+      if (findLastCapturableBlock() !== message) return;
 
-      const autoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.prompt}\n${conversation.answer.slice(0, 1000)}`);
+      const conversationAutoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.title}\n${conversation.prompt}`);
+      if (STATE.autoConversationIds.has(conversationAutoId)) return;
+
+      const autoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.prompt}`);
       if (STATE.autoReadIds.has(autoId)) return;
 
       const settings = await getSettings();
       if (!settings.autoRead) return;
 
       STATE.autoReadIds.add(autoId);
+      STATE.autoConversationIds.add(conversationAutoId);
       await generateReview(message, button, { auto: true });
     } catch (error) {
       updateToast(showToast("自动读取没有成功，可以手动点击复盘。"), error && error.message ? error.message : "自动读取没有成功，可以手动点击复盘。");

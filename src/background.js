@@ -138,11 +138,12 @@ function enqueueArchive(conversation, review) {
 async function archiveConversation(conversation, review) {
   const now = new Date().toISOString();
   const normalized = normalizeConversation(conversation, now);
-  const id = AfterAiShared.stableId([
+  const answerId = AfterAiShared.stableId([
     normalized.url,
     normalized.prompt,
     AfterAiShared.summarizeText(normalized.answer, 1200)
   ].join("\n"));
+  const id = review ? normalized.conversationId : answerId;
 
   const store = await chrome.storage.local.get([STORAGE_KEYS.records]);
   const records = Array.isArray(store[STORAGE_KEYS.records]) ? store[STORAGE_KEYS.records] : [];
