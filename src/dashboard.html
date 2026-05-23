@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AfterAI Coach 学习地图</title>
+    <link rel="stylesheet" href="./dashboard.css">
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="rail">
+        <div>
+          <p class="brand">AfterAI Coach</p>
+          <h1>学习地图</h1>
+          <p class="intro">每天从 AI 帮你完成的任务里，捞回一小块真正属于你的能力。</p>
+        </div>
+        <section class="stats" aria-label="学习概览">
+          <div>
+            <span id="stat-days">0</span>
+            <p>记录天数</p>
+          </div>
+          <div>
+            <span id="stat-pending">0</span>
+            <p>待学习</p>
+          </div>
+          <div>
+            <span id="stat-learned">0</span>
+            <p>已学会</p>
+          </div>
+          <div>
+            <span id="stat-favorites">0</span>
+            <p>收藏</p>
+          </div>
+        </section>
+        <button id="refresh" type="button">刷新地图</button>
+      </aside>
+
+      <section class="workspace">
+        <header class="workspace-header">
+          <div>
+            <p>Daily Learning Plan</p>
+            <h2>按天展开你的 AI 学习痕迹</h2>
+          </div>
+          <a href="./options.html" target="_blank" rel="noreferrer">设置模型</a>
+        </header>
+
+        <section class="filters" aria-label="筛选学习点">
+          <label>
+            <span>关键词</span>
+            <input id="search" type="search" placeholder="搜索知识点或学习方法">
+          </label>
+          <label>
+            <span>状态</span>
+            <select id="status-filter">
+              <option value="all">全部</option>
+              <option value="pending">待学习</option>
+              <option value="learned">已学会</option>
+              <option value="favorite">收藏夹</option>
+            </select>
+          </label>
+          <label>
+            <span>层级</span>
+            <select id="level-filter">
+              <option value="all">全部层级</option>
+              <option value="today">今天学</option>
+              <option value="practice">练几次</option>
+              <option value="later">以后学</option>
+            </select>
+          </label>
+        </section>
+
+        <div id="empty" class="empty" hidden>
+          <h3>还没有学习记录</h3>
+          <p>去 AI 网页完成一次任务，点击“教我这次任务”，这里就会出现当天的学习地图。</p>
+        </div>
+
+        <div id="timeline" class="timeline" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="./shared.js"></script>
+    <script src="./dashboard.js"></script>
+  </body>
+</html>

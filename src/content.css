@@ -1,0 +1,283 @@
+.afterai-coach-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  margin: 12px 0 6px;
+}
+
+.afterai-coach-button {
+  border: 1px solid rgba(38, 83, 64, 0.24);
+  border-radius: 7px;
+  background: #f6fbf8;
+  color: #173d2d;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 6px 9px;
+}
+
+.afterai-coach-button:hover {
+  background: #eaf6ef;
+}
+
+.afterai-coach-button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.afterai-coach-panel {
+  box-sizing: border-box;
+  max-width: 760px;
+  margin: 14px 0;
+  border: 1px solid rgba(18, 44, 32, 0.16);
+  border-radius: 8px;
+  background: #fbfdfb;
+  color: #17221d;
+  font: 14px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 16px;
+}
+
+.afterai-coach-panel:not([open]) {
+  padding: 12px 14px;
+}
+
+.afterai-coach-panel * {
+  box-sizing: border-box;
+}
+
+.afterai-coach-header {
+  cursor: pointer;
+  list-style: none;
+  border-bottom: 1px solid rgba(18, 44, 32, 0.12);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+}
+
+.afterai-coach-header::-webkit-details-marker {
+  display: none;
+}
+
+.afterai-coach-panel:not([open]) .afterai-coach-header {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.afterai-coach-header span {
+  color: #426353;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.afterai-coach-header h3 {
+  color: #12241b;
+  font-size: 18px;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.afterai-coach-section {
+  margin: 14px 0 0;
+}
+
+.afterai-coach-section h4 {
+  color: #1f382d;
+  font-size: 14px;
+  line-height: 1.3;
+  margin: 0 0 6px;
+}
+
+.afterai-coach-section p {
+  margin: 4px 0;
+}
+
+.afterai-coach-section ul,
+.afterai-coach-section ol {
+  margin: 6px 0 0 20px;
+  padding: 0;
+}
+
+.afterai-coach-section li {
+  margin: 6px 0;
+}
+
+.afterai-coach-section li strong {
+  display: block;
+}
+
+.afterai-concepts {
+  display: grid;
+  gap: 8px;
+}
+
+.afterai-concept {
+  align-items: flex-start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  padding: 8px 0;
+}
+
+.afterai-concept-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.afterai-concept span {
+  border: 1px solid rgba(38, 83, 64, 0.18);
+  border-radius: 999px;
+  color: #27543e;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  text-align: center;
+}
+
+.afterai-concept-copy strong {
+  color: #17221d;
+  display: block;
+  line-height: 1.35;
+  margin-bottom: 2px;
+}
+
+.afterai-concept p {
+  margin: 0;
+}
+
+.afterai-concept.is-learned {
+  opacity: 0.64;
+}
+
+.afterai-learned-button,
+.afterai-favorite-button {
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid rgba(38, 83, 64, 0.2);
+  border-radius: 6px;
+  color: #27543e;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.afterai-learned-button:hover,
+.afterai-favorite-button:hover {
+  background: #eef7f2;
+}
+
+.afterai-learned-button:disabled,
+.afterai-favorite-button:disabled {
+  cursor: default;
+}
+
+.afterai-favorite-button {
+  color: #315f8f;
+}
+
+.afterai-concept.is-favorite {
+  border-left: 3px solid #315f8f;
+  padding-left: 8px;
+}
+
+.afterai-assessment {
+  border-left: 3px solid #65706a;
+  margin: 6px 0;
+  padding-left: 10px;
+}
+
+.afterai-assessment-reliable {
+  border-left-color: #255c42;
+}
+
+.afterai-assessment-mixed {
+  border-left-color: #b56a21;
+}
+
+.afterai-assessment-risky {
+  border-left-color: #8a1f17;
+}
+
+.afterai-coach-muted {
+  color: #5f6c66;
+}
+
+.afterai-coach-error {
+  color: #8a1f17;
+  margin: 0;
+}
+
+.afterai-coach-section details {
+  border-top: 1px solid rgba(18, 44, 32, 0.1);
+  padding: 8px 0;
+}
+
+.afterai-coach-section summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.afterai-coach-toast {
+  align-items: center;
+  background: #17221d;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  bottom: 18px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  color: #ffffff;
+  display: flex;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 12px 12px 14px;
+  position: fixed;
+  right: 18px;
+  z-index: 2147483647;
+}
+
+.afterai-coach-toast p {
+  font: 600 13px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+.afterai-coach-toast button {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.afterai-fallback-dock {
+  background: rgba(251, 253, 251, 0.94);
+  border: 1px solid rgba(18, 44, 32, 0.14);
+  border-radius: 8px;
+  bottom: 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  display: flex;
+  gap: 6px;
+  left: 18px;
+  padding: 7px;
+  position: fixed;
+  z-index: 2147483646;
+}
+
+.afterai-fallback-dock button {
+  background: #ffffff;
+  border: 1px solid rgba(38, 83, 64, 0.18);
+  border-radius: 6px;
+  color: #173d2d;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+
+.afterai-fallback-dock button:hover {
+  background: #eef7f2;
+}

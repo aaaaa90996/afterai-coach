@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AfterAI Coach 设置</title>
+    <link rel="stylesheet" href="./options.css">
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <p>AfterAI Coach</p>
+        <h1>设置复盘模型</h1>
+      </header>
+
+      <form id="settings-form">
+        <label>
+          <span>接口格式</span>
+          <select id="provider" name="provider">
+            <option value="openai">OpenAI Chat Completions</option>
+            <option value="gemini">Gemini generateContent</option>
+            <option value="claude">Claude Messages</option>
+            <option value="tgi">TGI Chat Completions</option>
+            <option value="cohere">Cohere Chat v2</option>
+          </select>
+        </label>
+
+        <label>
+          <span>base_url</span>
+          <input id="baseUrl" name="baseUrl" type="url" placeholder="留空后自己填写，例如 https://api.example.com/v1">
+        </label>
+
+        <label>
+          <span>模型</span>
+          <input id="model" name="model" type="text" placeholder="填写模型名称，例如 deepseek-chat / moonshot-v1-8k / gpt-4.1-mini">
+        </label>
+
+        <label>
+          <span>API Key</span>
+          <input id="apiKey" name="apiKey" type="password" autocomplete="off" placeholder="只保存在本机浏览器 storage.local">
+        </label>
+
+        <label>
+          <span>请求超时（秒）</span>
+          <input id="requestTimeoutSeconds" name="requestTimeoutSeconds" type="number" min="5" max="300" step="5" placeholder="60">
+        </label>
+
+        <label>
+          <span>默认输出语言</span>
+          <input id="outputLanguage" name="outputLanguage" type="text" placeholder="简体中文">
+        </label>
+
+        <label class="toggle">
+          <input id="autoRead" name="autoRead" type="checkbox">
+          <span>
+            <strong>自动读取并生成复盘</strong>
+            <em>开启后，每次识别到新的 AI 回答都会自动生成复盘并保存到学习地图。</em>
+          </span>
+        </label>
+
+        <label class="toggle">
+          <input id="enableAssessment" name="enableAssessment" type="checkbox">
+          <span>
+            <strong>复盘时检查 AI 回答可靠性</strong>
+            <em>开启后，复盘会额外评判 AI 回答是否可靠、有哪些可疑点。会增加等待时间和 API 消耗。</em>
+          </span>
+        </label>
+
+        <div class="actions">
+          <button type="submit">保存设置</button>
+          <button id="clear-api" class="secondary" type="button">清空接口配置</button>
+          <span id="status" role="status"></span>
+        </div>
+      </form>
+
+      <section class="notes">
+        <h2>填写方式</h2>
+        <p>只选择接口格式，然后填写对应的 <code>base_url</code>、模型和 Key。插件会按格式拼接请求路径。</p>
+        <p>OpenAI/TGI 会拼 <code>/chat/completions</code>，Claude 会拼 <code>/v1/messages</code>，Cohere 会拼 <code>/v2/chat</code>，Gemini 会拼 <code>/models/{model}:generateContent</code>。</p>
+        <p>如果你填的是完整请求地址，插件会尽量直接使用它。</p>
+      </section>
+    </main>
+    <script src="./options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "AfterAI Coach",
+  "description": "把 AI 完成的任务拆成可学习的步骤、知识点和微练习。",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "AfterAI Coach",
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "https://*/*",
+    "https://api.openai.com/*",
+    "https://api.deepseek.com/*",
+    "https://dashscope.aliyuncs.com/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://www.doubao.com/*",
+        "https://yuanbao.tencent.com/*",
+        "https://kimi.moonshot.cn/*",
+        "https://chat.deepseek.com/*",
+        "https://tongyi.aliyun.com/*",
+        "https://grok.com/*",
+        "https://x.com/i/grok*",
+        "http://127.0.0.1/*",
+        "http://localhost/*"
+      ],
+      "js": ["src/shared.js", "src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
