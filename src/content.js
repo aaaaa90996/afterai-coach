@@ -43,8 +43,11 @@
       '[data-message-author-role="assistant"]',
       '[data-testid*="conversation-turn"][data-testid*="assistant"]',
       '[data-testid*="assistant"]',
+      "model-response",
+      "user-query",
       "message-content",
       '[id^="model-response-message-content"]',
+      ".model-response-text",
       '[class*="model-response"]',
       '[class*="font-claude-message"]',
       '[class*="claude"] [class*="message"]',
@@ -69,7 +72,7 @@
 
     const candidates = [];
     for (const selector of selectors) {
-      document.querySelectorAll(selector).forEach((node) => {
+      queryAll(selector).forEach((node) => {
         const text = getVisibleText(node);
         if (text.length > 120 && !node.closest(`.${PANEL_CLASS}`)) {
           candidates.push({ node, textLength: text.length });
@@ -88,7 +91,7 @@
   }
 
   function findLargeTextBlocks() {
-    const blocks = Array.from(document.querySelectorAll("main div, main section, main article, [role='main'] div, [role='main'] section"))
+    const blocks = queryAll("main div, main section, main article, [role='main'] div, [role='main'] section, model-response, message-content")
       .filter((node) => {
         if (node.closest(`.${PANEL_CLASS}`) || node.closest(".afterai-coach-actions")) return false;
         const text = getVisibleText(node);
@@ -258,16 +261,19 @@
   }
 
   function findNearestUserPrompt(assistantNode) {
-    const userNodes = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+    const userNodes = queryAll('[data-message-author-role="user"], user-query, [class*="user-query"]');
     const explicitBefore = userNodes
       .filter((node) => node.compareDocumentPosition(assistantNode) & Node.DOCUMENT_POSITION_FOLLOWING)
       .map((node) => getVisibleText(node))
       .filter((text) => text.length > 8);
     if (explicitBefore.length) return explicitBefore[explicitBefore.length - 1];
 
-    const allNodes = Array.from(document.querySelectorAll([
+    const allNodes = queryAll([
       '[data-message-author-role="user"]',
+      "user-query",
       '[data-testid*="conversation-turn"]',
+      '[class*="user-query"]',
+      '[class*="user-query-content"]',
       '[class*="user-message"]',
       '[class*="human"]',
       '[class*="input-content"]',
@@ -278,7 +284,7 @@
       '[class*="query"]',
       "article",
       ".group"
-    ].join(",")));
+    ].join(","));
 
     const before = allNodes
       .filter((node) => node.compareDocumentPosition(assistantNode) & Node.DOCUMENT_POSITION_FOLLOWING)
@@ -531,6 +537,24 @@
 
   function getVisibleText(node) {
     return (node && node.innerText ? node.innerText : "").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  function queryAll(selector, root) {
+    const start = root || document;
+    const results = [];
+    try {
+      results.push(...Array.from(start.querySelectorAll(selector)));
+    } catch (_) {
+      return results;
+    }
+
+    const elements = start.querySelectorAll ? Array.from(start.querySelectorAll("*")) : [];
+    elements.forEach((element) => {
+      if (element.shadowRoot) {
+        results.push(...queryAll(selector, element.shadowRoot));
+      }
+    });
+    return Array.from(new Set(results));
   }
 
   function showToast(message, options) {
