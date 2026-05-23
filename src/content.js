@@ -88,11 +88,10 @@
       '[data-message-author-role="assistant"]',
       '[data-testid*="conversation-turn"][data-testid*="assistant"]',
       '[data-testid*="assistant"]',
-      "model-response",
-      "user-query",
       "message-content",
       '[id^="model-response-message-content"]',
       ".model-response-text",
+      "model-response",
       '[class*="model-response"]',
       '[class*="font-claude-message"]',
       '[class*="claude"] [class*="message"]',
@@ -116,23 +115,67 @@
     ];
 
     const candidates = [];
-    for (const selector of selectors) {
+    selectors.forEach((selector, priority) => {
       queryAll(selector).forEach((node) => {
         const text = getVisibleText(node);
-        if (text.length > 120 && !node.closest(`.${PANEL_CLASS}`)) {
-          candidates.push({ node, textLength: text.length });
+        if (isCapturableCandidate(node, text)) {
+          candidates.push({ node, textLength: text.length, priority });
         }
       });
-      if (candidates.length) break;
-    }
+    });
 
     if (!candidates.length) {
       findLargeTextBlocks().forEach((node) => {
-        candidates.push({ node, textLength: getVisibleText(node).length });
+        candidates.push({ node, textLength: getVisibleText(node).length, priority: selectors.length + 10 });
       });
     }
 
-    return dedupeNodes(candidates.map((candidate) => candidate.node));
+    return selectBestMessageNodes(candidates);
+  }
+
+  function isCapturableCandidate(node, text) {
+    if (!node || !text || text.length <= 120) return false;
+    if (text.length > 30000) return false;
+    if (node.closest(`.${PANEL_CLASS}`) || node.closest(".afterai-coach-actions")) return false;
+    if (node.matches && node.matches("html, body")) return false;
+    if (node.matches && node.matches("main, [role='main']") && text.length > 1500) return false;
+    if (/^(复制|重新生成|分享|点赞|点踩|\s)+$/.test(text)) return false;
+    return true;
+  }
+
+  function selectBestMessageNodes(candidates) {
+    const unique = [];
+    candidates.forEach((candidate) => {
+      if (!unique.some((item) => item.node === candidate.node)) unique.push(candidate);
+    });
+
+    const filtered = unique.filter((candidate) => {
+      return !unique.some((other) => {
+        if (other.node === candidate.node) return false;
+        if (!candidate.node.contains(other.node)) return false;
+        if (!isBetterNestedCandidate(candidate, other)) return false;
+        return true;
+      });
+    });
+
+    return filtered
+      .sort((a, b) => documentPositionSort(a.node, b.node))
+      .map((candidate) => candidate.node);
+  }
+
+  function isBetterNestedCandidate(parent, child) {
+    if (child.priority < parent.priority) return true;
+    if (child.textLength >= parent.textLength * 0.55) return true;
+    if (parent.textLength - child.textLength < 600) return true;
+    return false;
+  }
+
+  function documentPositionSort(a, b) {
+    if (a === b) return 0;
+    const position = a.compareDocumentPosition(b);
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return 0;
   }
 
   function findLargeTextBlocks() {
