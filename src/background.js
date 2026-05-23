@@ -8,7 +8,8 @@ const DEFAULT_SETTINGS = {
   requestTimeoutMs: 60000,
   outputLanguage: "简体中文",
   enableAssessment: false,
-  autoRead: false
+  autoRead: false,
+  pageWidgetsHidden: false
 };
 
 const STORAGE_KEYS = {

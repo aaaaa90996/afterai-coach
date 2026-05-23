@@ -11,7 +11,7 @@ document.querySelector("#enable-current-page").addEventListener("click", async (
   try {
     const tab = await getActiveTab();
     await injectCoach(tab.id);
-    status.textContent = "已启用当前页。请看页面左下角是否出现保存入口，然后点“诊断当前页”。";
+    status.textContent = "已启用当前页。若没有在设置中隐藏悬浮入口，页面左下角会出现保存入口；也可以直接点“诊断当前页”。";
   } catch (error) {
     status.textContent = `启用失败：${error && error.message ? error.message : String(error)}`;
   }

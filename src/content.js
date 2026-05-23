@@ -6,16 +6,41 @@
     observer: null,
     scanTimer: null,
     autoReadIds: new Set(),
-    toast: null
+    toast: null,
+    pageWidgetsHidden: false
   };
 
   boot();
 
   function boot() {
     installObserver();
-    installFallbackDock();
     installMessageBridge();
+    installSettingsListener();
+    loadPageWidgetPreference();
     scheduleScan();
+  }
+
+  async function loadPageWidgetPreference() {
+    const settings = await getSettings();
+    STATE.pageWidgetsHidden = Boolean(settings.pageWidgetsHidden);
+    if (STATE.pageWidgetsHidden) {
+      removePageWidgets();
+    } else {
+      installFallbackDock();
+    }
+  }
+
+  function installSettingsListener() {
+    if (!chrome.storage || !chrome.storage.onChanged) return;
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes.pageWidgetsHidden) return;
+      STATE.pageWidgetsHidden = Boolean(changes.pageWidgetsHidden.newValue);
+      if (STATE.pageWidgetsHidden) {
+        removePageWidgets();
+      } else {
+        installFallbackDock();
+      }
+    });
   }
 
   function installMessageBridge() {
@@ -153,6 +178,7 @@
   }
 
   function installFallbackDock() {
+    if (STATE.pageWidgetsHidden) return;
     if (document.querySelector(".afterai-fallback-dock")) return;
     const dock = document.createElement("aside");
     dock.className = "afterai-fallback-dock";
@@ -180,6 +206,11 @@
 
     dock.append(capture, map);
     document.documentElement.appendChild(dock);
+  }
+
+  function removePageWidgets() {
+    document.querySelectorAll(".afterai-fallback-dock, .afterai-coach-toast").forEach((node) => node.remove());
+    STATE.toast = null;
   }
 
   function findLastCapturableBlock() {
@@ -578,6 +609,7 @@
   }
 
   function showToast(message, options) {
+    if (STATE.pageWidgetsHidden) return null;
     if (STATE.toast) STATE.toast.remove();
     const toast = document.createElement("aside");
     toast.className = "afterai-coach-toast";

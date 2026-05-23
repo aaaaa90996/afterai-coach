@@ -6,7 +6,8 @@ const DEFAULTS = {
   requestTimeoutMs: 60000,
   outputLanguage: "简体中文",
   enableAssessment: false,
-  autoRead: false
+  autoRead: false,
+  pageWidgetsHidden: false
 };
 
 const form = document.querySelector("#settings-form");
@@ -20,6 +21,7 @@ form.addEventListener("submit", async (event) => {
   const values = Object.fromEntries(new FormData(form).entries());
   values.autoRead = document.querySelector("#autoRead").checked;
   values.enableAssessment = document.querySelector("#enableAssessment").checked;
+  values.pageWidgetsHidden = document.querySelector("#pageWidgetsHidden").checked;
   values.requestTimeoutMs = normalizeTimeoutSeconds(values.requestTimeoutSeconds) * 1000;
   delete values.requestTimeoutSeconds;
   await chrome.storage.local.set(values);
