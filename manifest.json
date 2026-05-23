@@ -8,7 +8,7 @@
     "default_popup": "src/popup.html"
   },
   "options_page": "src/options.html",
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://localhost/*",
@@ -28,6 +28,8 @@
         "https://chat.openai.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
+        "https://aistudio.google.com/*",
+        "https://bard.google.com/*",
         "https://www.doubao.com/*",
         "https://yuanbao.tencent.com/*",
         "https://kimi.moonshot.cn/*",
@@ -40,7 +42,8 @@
       ],
       "js": ["src/shared.js", "src/content.js"],
       "css": ["src/content.css"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ]
 }

@@ -14,7 +14,27 @@
   function boot() {
     installObserver();
     installFallbackDock();
+    installMessageBridge();
     scheduleScan();
+  }
+
+  function installMessageBridge() {
+    if (window.__afterAiCoachBridgeInstalled) return;
+    window.__afterAiCoachBridgeInstalled = true;
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (!message || message.type !== "AFTERAI_PAGE_DIAGNOSTIC") return false;
+      const messages = findAssistantMessages();
+      sendResponse({
+        ok: true,
+        url: location.href,
+        title: document.title,
+        assistantCount: messages.length,
+        dockVisible: Boolean(document.querySelector(".afterai-fallback-dock")),
+        bodyTextLength: getVisibleText(document.body).length,
+        sample: messages[0] ? getVisibleText(messages[0]).slice(0, 240) : ""
+      });
+      return true;
+    });
   }
 
   function installObserver() {

@@ -21,7 +21,12 @@ p {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.secondary-actions {
+  margin-top: 8px;
 }
 
 button {
@@ -34,8 +39,17 @@ button {
   padding: 9px 12px;
 }
 
-#open-options {
+#open-options,
+#enable-current-page,
+#diagnose-current-page {
   background: #ffffff;
   border: 1px solid rgba(34, 84, 61, 0.2);
   color: #22543d;
+}
+
+#status {
+  color: #4f5d56;
+  font-size: 12px;
+  margin: 10px 0 0;
+  white-space: pre-wrap;
 }
