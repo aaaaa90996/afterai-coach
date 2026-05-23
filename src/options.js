@@ -7,6 +7,7 @@ const DEFAULTS = {
   outputLanguage: "简体中文",
   enableAssessment: false,
   autoRead: false,
+  reviewMode: "conversation",
   pageWidgetsHidden: false
 };
 
@@ -22,6 +23,7 @@ form.addEventListener("submit", async (event) => {
   values.autoRead = document.querySelector("#autoRead").checked;
   values.enableAssessment = document.querySelector("#enableAssessment").checked;
   values.pageWidgetsHidden = document.querySelector("#pageWidgetsHidden").checked;
+  values.reviewMode = normalizeReviewMode(values.reviewMode);
   values.requestTimeoutMs = normalizeTimeoutSeconds(values.requestTimeoutSeconds) * 1000;
   delete values.requestTimeoutSeconds;
   await chrome.storage.local.set(values);
@@ -54,6 +56,7 @@ clearApi.addEventListener("click", async () => {
 async function restore() {
   const values = Object.assign({}, DEFAULTS, await chrome.storage.local.get(Object.keys(DEFAULTS).concat(["endpoint"])));
   values.provider = normalizeProvider(values.provider);
+  values.reviewMode = normalizeReviewMode(values.reviewMode);
   values.baseUrl = values.baseUrl || values.endpoint || "";
   values.requestTimeoutSeconds = String(Math.round(normalizeTimeoutMs(values.requestTimeoutMs) / 1000));
   for (const [key, value] of Object.entries(values)) {
@@ -71,6 +74,11 @@ function normalizeProvider(provider) {
   if (["openai", "gemini", "claude", "tgi", "cohere"].includes(provider)) return provider;
   if (provider === "gemini") return "gemini";
   return "openai";
+}
+
+function normalizeReviewMode(mode) {
+  if (["conversation", "manual", "answer"].includes(mode)) return mode;
+  return "conversation";
 }
 
 function normalizeTimeoutSeconds(value) {

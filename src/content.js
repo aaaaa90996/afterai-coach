@@ -7,6 +7,7 @@
     scanTimer: null,
     autoReadIds: new Set(),
     autoConversationIds: new Set(),
+    conversationReviewTimers: new Map(),
     stableTimers: new WeakMap(),
     toast: null,
     pageWidgetsHidden: false
@@ -318,23 +319,60 @@
     try {
       const conversation = collectConversation(message);
       if (!conversation.answer || conversation.answer.length < 80) return;
-      if (findLastCapturableBlock() !== message) return;
-
-      const conversationAutoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.title}\n${conversation.prompt}`);
-      if (STATE.autoConversationIds.has(conversationAutoId)) return;
-
-      const autoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.prompt}`);
-      if (STATE.autoReadIds.has(autoId)) return;
 
       const settings = await getSettings();
       if (!settings.autoRead) return;
+      const reviewMode = normalizeReviewMode(settings.reviewMode);
+      if (reviewMode === "manual") return;
 
-      STATE.autoReadIds.add(autoId);
-      STATE.autoConversationIds.add(conversationAutoId);
-      await generateReview(message, button, { auto: true });
+      if (reviewMode === "answer") {
+        await maybeAutoReadAnswer(message, button, conversation);
+        return;
+      }
+
+      scheduleConversationReview(message, button, conversation);
     } catch (error) {
       updateToast(showToast("自动读取没有成功，可以手动点击复盘。"), error && error.message ? error.message : "自动读取没有成功，可以手动点击复盘。");
     }
+  }
+
+  async function maybeAutoReadAnswer(message, button, conversation) {
+    const autoId = AfterAiShared.stableId(`${conversation.url}\n${conversation.prompt}\n${conversation.answer.slice(0, 1000)}`);
+    if (STATE.autoReadIds.has(autoId)) return;
+    STATE.autoReadIds.add(autoId);
+    await generateReview(message, button, { auto: true });
+  }
+
+  function scheduleConversationReview(message, button, conversation) {
+    if (findLastCapturableBlock() !== message) return;
+
+    const conversationAutoId = getConversationAutoId(conversation);
+    if (STATE.autoConversationIds.has(conversationAutoId)) return;
+
+    const existing = STATE.conversationReviewTimers.get(conversationAutoId);
+    if (existing) window.clearTimeout(existing);
+
+    const timer = window.setTimeout(async () => {
+      if (STATE.autoConversationIds.has(conversationAutoId)) return;
+      if (findLastCapturableBlock() !== message) return;
+      STATE.autoConversationIds.add(conversationAutoId);
+      await generateReview(message, button, { auto: true });
+    }, 18000);
+    STATE.conversationReviewTimers.set(conversationAutoId, timer);
+  }
+
+  function getConversationAutoId(conversation) {
+    try {
+      const url = new URL(conversation.url || location.href);
+      return AfterAiShared.stableId(`${url.hostname}\n${conversation.title || ""}\n${url.pathname}`);
+    } catch (_) {
+      return AfterAiShared.stableId(`${conversation.url || location.href}\n${conversation.title || ""}`);
+    }
+  }
+
+  function normalizeReviewMode(mode) {
+    if (["conversation", "manual", "answer"].includes(mode)) return mode;
+    return "conversation";
   }
 
   async function getSettings() {

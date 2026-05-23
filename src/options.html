@@ -54,8 +54,17 @@
           <input id="autoRead" name="autoRead" type="checkbox">
           <span>
             <strong>自动读取并生成复盘</strong>
-            <em>开启后，每次识别到新的 AI 回答都会自动生成复盘并保存到学习地图。</em>
+            <em>开启后，会按下面的复盘模式自动生成复盘并保存到学习地图。</em>
           </span>
+        </label>
+
+        <label>
+          <span>复盘模式</span>
+          <select id="reviewMode" name="reviewMode">
+            <option value="conversation">每个对话/任务一次（推荐）</option>
+            <option value="manual">只手动复盘</option>
+            <option value="answer">每条稳定回答都复盘</option>
+          </select>
         </label>
 
         <label class="toggle">

@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   outputLanguage: "简体中文",
   enableAssessment: false,
   autoRead: false,
+  reviewMode: "conversation",
   pageWidgetsHidden: false
 };
 
