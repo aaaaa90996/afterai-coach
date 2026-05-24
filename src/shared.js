@@ -23,6 +23,17 @@
     later: "以后学"
   };
 
+  const ABILITY_DIMENSIONS = [
+    { id: "code", label: "编程工程", pattern: /代码|编程|函数|组件|接口|api|dom|css|html|js|javascript|typescript|python|bug|测试|插件|extension|git|数据库|算法|class|react|vue/i },
+    { id: "writing", label: "写作表达", pattern: /写作|文章|文案|改写|润色|邮件|报告|标题|叙述|表达|copy|essay|blog/i },
+    { id: "presentation", label: "演示汇报", pattern: /ppt|slide|deck|演示|汇报|路演|幻灯片|讲稿|叙事结构/i },
+    { id: "research", label: "研究分析", pattern: /研究|分析|资料|证据|调研|论文|竞品|判断|可靠性|验证|评估/i },
+    { id: "product", label: "产品设计", pattern: /产品|需求|用户|体验|交互|流程|功能|插件|设置|界面|ui|ux/i },
+    { id: "tools", label: "工具使用", pattern: /工具|命令|终端|powershell|配置|部署|脚本|浏览器|扩展|环境变量|api key/i },
+    { id: "math", label: "数学算法", pattern: /数学|公式|算法|复杂度|概率|统计|矩阵|微积分|定理|模型/i },
+    { id: "general", label: "通用能力", pattern: /./ }
+  ];
+
   function clipText(text, maxLength) {
     const normalized = String(text || "").replace(/\n{4,}/g, "\n\n\n").trim();
     if (normalized.length <= maxLength) return normalized;
@@ -296,17 +307,137 @@
     return days;
   }
 
+  function inferAbilityDimension(concept, record) {
+    const text = [
+      concept && concept.name,
+      concept && concept.why_it_matters,
+      concept && concept.how_to_learn,
+      record && record.taskKind,
+      record && record.prompt,
+      record && record.answer
+    ].join("\n");
+    return ABILITY_DIMENSIONS.find((item) => item.pattern.test(text)) || ABILITY_DIMENSIONS[ABILITY_DIMENSIONS.length - 1];
+  }
+
+  function buildAbilityRadar(records) {
+    const buckets = ABILITY_DIMENSIONS.map((item) => ({
+      id: item.id,
+      label: item.label,
+      count: 0,
+      learned: 0,
+      pending: 0,
+      concepts: []
+    }));
+    const byId = Object.fromEntries(buckets.map((item) => [item.id, item]));
+
+    (Array.isArray(records) ? records : []).forEach((record) => {
+      const concepts = record.review && Array.isArray(record.review.concepts) ? record.review.concepts : [];
+      concepts.forEach((concept) => {
+        const normalized = normalizeConcept(concept);
+        const dimension = inferAbilityDimension(normalized, record);
+        const bucket = byId[dimension.id] || byId.general;
+        bucket.count += 1;
+        if (record.learned || normalized.learned) bucket.learned += 1;
+        else bucket.pending += 1;
+        if (!bucket.concepts.includes(normalized.name)) bucket.concepts.push(normalized.name);
+      });
+    });
+
+    const max = Math.max(1, ...buckets.map((item) => item.count));
+    return buckets.map((item) => Object.assign({}, item, {
+      score: Math.round((item.count / max) * 100),
+      concepts: item.concepts.slice(0, 5)
+    }));
+  }
+
+  function buildDependencyStats(records) {
+    const scores = (Array.isArray(records) ? records : [])
+      .map((record) => Number(record.selfAbilityScore))
+      .filter((score) => Number.isFinite(score));
+    const averageSelfAbility = scores.length
+      ? Math.round(scores.reduce((total, score) => total + score, 0) / scores.length)
+      : null;
+    return {
+      count: scores.length,
+      averageSelfAbility,
+      averageAiDependency: averageSelfAbility === null ? null : 100 - averageSelfAbility
+    };
+  }
+
+  function buildGrowthLines(records) {
+    const lines = new Map();
+    (Array.isArray(records) ? records : []).forEach((record) => {
+      const concepts = record.review && Array.isArray(record.review.concepts) ? record.review.concepts : [];
+      concepts.forEach((concept) => {
+        const normalized = normalizeConcept(concept);
+        const key = normalized.id || stableId(normalized.name);
+        if (!lines.has(key)) {
+          lines.set(key, {
+            id: key,
+            name: normalized.name,
+            count: 0,
+            firstAt: record.createdAt || "",
+            lastAt: record.createdAt || "",
+            records: []
+          });
+        }
+        const line = lines.get(key);
+        line.count += 1;
+        if (record.createdAt && (!line.firstAt || record.createdAt < line.firstAt)) line.firstAt = record.createdAt;
+        if (record.createdAt && (!line.lastAt || record.createdAt > line.lastAt)) line.lastAt = record.createdAt;
+        line.records.push({
+          id: record.id,
+          title: record.review && record.review.title ? record.review.title : record.conversationTitle || record.pageTitle || "AI 任务",
+          day: record.day || dayKey(record.createdAt)
+        });
+      });
+    });
+    return Array.from(lines.values()).filter((line) => line.count > 1).sort((a, b) => b.count - a.count || String(b.lastAt).localeCompare(String(a.lastAt)));
+  }
+
+  function exportStudyCards(records) {
+    const lines = ["# AfterAI 学习卡片", ""];
+    (Array.isArray(records) ? records : []).forEach((record) => {
+      const review = record.review || {};
+      const title = review.title || record.conversationTitle || record.pageTitle || "AI 任务";
+      (Array.isArray(review.concepts) ? review.concepts : []).forEach((concept) => {
+        const normalized = normalizeConcept(concept);
+        lines.push(`## ${normalized.name}`, "");
+        lines.push(`来源：${title}`, "");
+        lines.push(`问题：这个知识点为什么重要？`, "");
+        lines.push(`答案：${normalized.why_it_matters || "它出现在你的 AI 任务中，影响你能否独立完成类似任务。"}`, "");
+        lines.push(`练习：${normalized.how_to_learn}`, "");
+      });
+      (Array.isArray(review.quiz) ? review.quiz : []).forEach((item) => {
+        lines.push(`## ${String(item.question || "微测试问题")}`, "");
+        lines.push(`来源：${title}`, "");
+        lines.push(`答案：${String(item.answer || "")}`, "");
+      });
+      (Array.isArray(record.mistakes) ? record.mistakes : []).forEach((item) => {
+        lines.push(`## 错题：${String(item.title || item.claim || "需要复查的问题")}`, "");
+        lines.push(`答案：${String(item.note || item.reason || "复查这个点，并写下正确做法。")}`, "");
+      });
+    });
+    return `${lines.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;
+  }
+
   return {
+    ABILITY_DIMENSIONS,
     DEFAULT_LIMITS,
     LEVEL_LABELS,
     TASK_KIND_LABELS,
+    buildAbilityRadar,
     buildConversationMap,
+    buildDependencyStats,
+    buildGrowthLines,
     buildLearningMap,
     buildCoachPrompt,
     clipText,
     dayKey,
     detectTaskKind,
     extractJsonObject,
+    exportStudyCards,
+    inferAbilityDimension,
     normalizeCoachPayload,
     normalizeConcept,
     normalizeAssessment,

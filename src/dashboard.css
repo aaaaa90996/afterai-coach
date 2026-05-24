@@ -189,6 +189,88 @@ button {
   outline: 2px solid rgba(37, 92, 66, 0.12);
 }
 
+.insights,
+.growth-board {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.insights article,
+.growth-board article {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.section-title {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.section-title h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.section-title span,
+.tool-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.radar-list,
+.mini-list {
+  display: grid;
+  gap: 9px;
+}
+
+.radar-row {
+  display: grid;
+  gap: 4px;
+}
+
+.radar-row span,
+.mini-item strong {
+  font-weight: 850;
+}
+
+.radar-row div,
+.dependency-meter {
+  background: rgba(37, 92, 66, 0.08);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.radar-row i,
+.dependency-meter span {
+  background: var(--green);
+  display: block;
+  height: 100%;
+}
+
+.radar-row small,
+.mini-item p,
+.mini-empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.tool-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+}
+
 .empty {
   border-left: 4px solid var(--amber);
   margin-top: 80px;
@@ -445,6 +527,11 @@ button {
   }
 
   .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .insights,
+  .growth-board {
     grid-template-columns: 1fr;
   }
 

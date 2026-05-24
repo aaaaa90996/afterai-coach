@@ -66,8 +66,18 @@ async function routeMessage(message) {
     return await getLearningState();
   }
 
+  if (message.type === "AFTERAI_UPDATE_RECORD_META") {
+    await updateRecordMeta(message.recordId, message.patch);
+    return await getLearningState();
+  }
+
   if (message.type === "AFTERAI_IMPORT_RECORDS") {
     return await importRecords(message.records);
+  }
+
+  if (message.type === "AFTERAI_EXPORT_STUDY_CARDS") {
+    const state = await getLearningState();
+    return { markdown: AfterAiShared.exportStudyCards(state.records) };
   }
 
   if (message.type === "AFTERAI_GET_LEARNING_STATE") {
@@ -284,6 +294,48 @@ async function deleteRecord(recordId) {
   });
 }
 
+async function updateRecordMeta(recordId, patch) {
+  if (!recordId || !patch || typeof patch !== "object") return;
+  const store = await chrome.storage.local.get([STORAGE_KEYS.records]);
+  const records = Array.isArray(store[STORAGE_KEYS.records]) ? store[STORAGE_KEYS.records] : [];
+  const index = records.findIndex((record) => record.id === recordId);
+  if (index < 0) return;
+
+  const current = records[index];
+  const next = Object.assign({}, current);
+  if (Object.prototype.hasOwnProperty.call(patch, "selfAbilityScore")) {
+    next.selfAbilityScore = normalizeScore(patch.selfAbilityScore);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "reviewQualityScore")) {
+    next.reviewQualityScore = normalizeScore(patch.reviewQualityScore);
+  }
+  if (Array.isArray(patch.mistakes)) {
+    next.mistakes = patch.mistakes.slice(0, 20).map(normalizeMistake);
+  }
+  if (patch.addMistake) {
+    next.mistakes = (next.mistakes || []).concat(normalizeMistake(patch.addMistake)).slice(0, 20);
+  }
+  next.updatedAt = new Date().toISOString();
+  records[index] = next;
+  await chrome.storage.local.set({ [STORAGE_KEYS.records]: records });
+}
+
+function normalizeScore(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.min(Math.max(Math.round(parsed), 0), 100);
+}
+
+function normalizeMistake(value) {
+  const item = value && typeof value === "object" ? value : {};
+  return {
+    id: item.id || AfterAiShared.stableId(`${item.title || item.claim || ""}\n${item.note || item.reason || ""}`),
+    title: String(item.title || item.claim || "需要复查的问题"),
+    note: String(item.note || item.reason || item.suggested_fix || "复查这个点，并写下正确做法。"),
+    createdAt: item.createdAt || new Date().toISOString()
+  };
+}
+
 async function getLearningState() {
   const store = await chrome.storage.local.get([STORAGE_KEYS.records, STORAGE_KEYS.learnedConcepts, "afterai.favoriteConcepts"]);
   const records = Array.isArray(store[STORAGE_KEYS.records]) ? store[STORAGE_KEYS.records] : [];
@@ -348,6 +400,9 @@ function normalizeImportedRecord(record) {
     updatedAt: record.updatedAt || createdAt,
     day: record.day || AfterAiShared.dayKey(createdAt),
     taskKind: record.taskKind || AfterAiShared.detectTaskKind(prompt, answer),
+    selfAbilityScore: typeof record.selfAbilityScore === "number" ? normalizeScore(record.selfAbilityScore) : null,
+    reviewQualityScore: typeof record.reviewQualityScore === "number" ? normalizeScore(record.reviewQualityScore) : null,
+    mistakes: Array.isArray(record.mistakes) ? record.mistakes.map(normalizeMistake) : [],
     review: record.review ? AfterAiShared.normalizeCoachPayload(record.review) : null
   };
 }

@@ -76,6 +76,47 @@
           </label>
         </section>
 
+        <section class="insights" aria-label="能力总览">
+          <article>
+            <div class="section-title">
+              <h3>能力雷达</h3>
+              <span>按知识点自动归类</span>
+            </div>
+            <div id="ability-radar" class="radar-list"></div>
+          </article>
+          <article>
+            <div class="section-title">
+              <h3>AI 依赖度</h3>
+              <span id="dependency-summary">还没有评分</span>
+            </div>
+            <div class="dependency-meter">
+              <span id="dependency-bar"></span>
+            </div>
+          </article>
+        </section>
+
+        <section class="tool-row" aria-label="导出和复习">
+          <button id="export-cards" type="button">导出学习卡片</button>
+          <span id="export-status" role="status"></span>
+        </section>
+
+        <section class="growth-board" aria-label="成长线和错题本">
+          <article>
+            <div class="section-title">
+              <h3>同类任务成长线</h3>
+              <span>重复出现的能力线索</span>
+            </div>
+            <div id="growth-lines" class="mini-list"></div>
+          </article>
+          <article>
+            <div class="section-title">
+              <h3>错题本</h3>
+              <span>AI 可疑点和你标记的问题</span>
+            </div>
+            <div id="mistake-book" class="mini-list"></div>
+          </article>
+        </section>
+
         <div id="empty" class="empty" hidden>
           <h3>还没有学习记录</h3>
           <p>去 AI 网页完成一次任务，点击“教我这次任务”，这里就会出现当天的学习地图。</p>

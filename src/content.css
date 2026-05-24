@@ -220,6 +220,66 @@
   font-weight: 650;
 }
 
+.afterai-reflection-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.afterai-score-box {
+  border: 1px solid rgba(18, 44, 32, 0.1);
+  border-radius: 7px;
+  padding: 8px;
+}
+
+.afterai-score-box strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+
+.afterai-score-box div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.afterai-score-box button,
+.afterai-mistake-list button {
+  background: #ffffff;
+  border: 1px solid rgba(38, 83, 64, 0.2);
+  border-radius: 6px;
+  color: #27543e;
+  cursor: pointer;
+  font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 6px 7px;
+}
+
+.afterai-score-box button.is-selected {
+  background: #e9f4ee;
+}
+
+.afterai-mistake-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.afterai-mistake-list div {
+  align-items: center;
+  border-left: 3px solid #b56a21;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-left: 8px;
+}
+
+@media (max-width: 720px) {
+  .afterai-reflection-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .afterai-coach-toast {
   align-items: center;
   background: #17221d;

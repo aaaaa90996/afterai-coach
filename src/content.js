@@ -506,6 +506,7 @@
     if (review.encouragement) {
       panel.appendChild(renderCallout("一句提醒", review.encouragement));
     }
+    panel.appendChild(renderReflectionControls(recordId, review));
 
     message.appendChild(panel);
   }
@@ -651,6 +652,90 @@
       section.appendChild(caveat);
     }
     return section;
+  }
+
+  function renderReflectionControls(recordId, review) {
+    const section = createSection("把这次变成能力");
+    const ability = document.createElement("div");
+    ability.className = "afterai-reflection-grid";
+    ability.appendChild(renderScoreButtons("如果没有 AI，你能完成多少？", [0, 25, 50, 75, 100], async (score, button) => {
+      await updateRecordMeta(recordId, { selfAbilityScore: score });
+      markButtonGroup(button, `已记录 ${score}%`);
+    }));
+    ability.appendChild(renderScoreButtons("这份复盘有多有用？", [20, 40, 60, 80, 100], async (score, button) => {
+      await updateRecordMeta(recordId, { reviewQualityScore: score });
+      markButtonGroup(button, "已评分");
+    }));
+    section.appendChild(ability);
+
+    const mistakes = assessmentMistakes(review.assessment);
+    if (mistakes.length) {
+      const list = document.createElement("div");
+      list.className = "afterai-mistake-list";
+      mistakes.forEach((mistake) => {
+        const row = document.createElement("div");
+        const copy = document.createElement("p");
+        copy.textContent = mistake.title;
+        const add = document.createElement("button");
+        add.type = "button";
+        add.textContent = "加入错题本";
+        add.addEventListener("click", async () => {
+          add.disabled = true;
+          await updateRecordMeta(recordId, { addMistake: mistake });
+          add.textContent = "已加入";
+        });
+        row.append(copy, add);
+        list.appendChild(row);
+      });
+      section.appendChild(list);
+    }
+    return section;
+  }
+
+  function renderScoreButtons(title, scores, onSelect) {
+    const box = document.createElement("div");
+    box.className = "afterai-score-box";
+    const label = document.createElement("strong");
+    label.textContent = title;
+    const row = document.createElement("div");
+    scores.forEach((score) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${score}%`;
+      button.addEventListener("click", () => onSelect(score, button));
+      row.appendChild(button);
+    });
+    box.append(label, row);
+    return box;
+  }
+
+  function markButtonGroup(button, label) {
+    Array.from(button.parentElement.children).forEach((item) => {
+      item.disabled = true;
+      item.classList.remove("is-selected");
+    });
+    button.classList.add("is-selected");
+    button.textContent = label;
+  }
+
+  function assessmentMistakes(assessment) {
+    if (!assessment || !Array.isArray(assessment.checks)) return [];
+    return assessment.checks
+      .filter((item) => item.judgment === "wrong" || item.judgment === "questionable")
+      .slice(0, 4)
+      .map((item) => ({
+        title: item.claim || "AI 回答里有一个需要复查的点",
+        note: item.suggested_fix || item.reason || "复查这个说法，并写下正确做法。"
+      }));
+  }
+
+  async function updateRecordMeta(recordId, patch) {
+    if (!recordId) return;
+    await chrome.runtime.sendMessage({
+      type: "AFTERAI_UPDATE_RECORD_META",
+      recordId,
+      patch
+    });
   }
 
   function renderQuiz(quiz) {

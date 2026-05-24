@@ -2,7 +2,11 @@ const assert = require("node:assert/strict");
 const {
   buildCoachPrompt,
   buildConversationMap,
+  buildAbilityRadar,
+  buildDependencyStats,
+  buildGrowthLines,
   buildLearningMap,
+  exportStudyCards,
   clipText,
   dayKey,
   detectTaskKind,
@@ -170,4 +174,54 @@ test("buildConversationMap groups records into sessions", () => {
   assert.equal(map[0].sessions.length, 1);
   assert.equal(map[0].sessions[0].records.length, 2);
   assert.equal(map[0].sessions[0].concepts.length, 2);
+});
+
+test("buildAbilityRadar groups concepts into capability dimensions", () => {
+  const radar = buildAbilityRadar([
+    {
+      id: "r1",
+      taskKind: "code",
+      review: { concepts: [{ name: "DOM 监听", level: "today" }, { name: "PPT 叙事结构", level: "practice" }] }
+    }
+  ]);
+
+  assert.ok(radar.find((item) => item.id === "code").count >= 1);
+  assert.ok(radar.find((item) => item.id === "presentation").count >= 1);
+});
+
+test("buildDependencyStats averages user dependency scores", () => {
+  const stats = buildDependencyStats([
+    { id: "r1", selfAbilityScore: 25 },
+    { id: "r2", selfAbilityScore: 75 }
+  ]);
+
+  assert.equal(stats.count, 2);
+  assert.equal(stats.averageSelfAbility, 50);
+  assert.equal(stats.averageAiDependency, 50);
+});
+
+test("buildGrowthLines finds repeated task themes", () => {
+  const lines = buildGrowthLines([
+    { id: "r1", createdAt: "2026-05-20T10:00:00", review: { concepts: [{ name: "DOM 监听", level: "today" }] } },
+    { id: "r2", createdAt: "2026-05-22T10:00:00", review: { concepts: [{ name: "dom 监听", level: "practice" }] } }
+  ]);
+
+  assert.equal(lines[0].name, "DOM 监听");
+  assert.equal(lines[0].count, 2);
+});
+
+test("exportStudyCards creates markdown cards from concepts and quizzes", () => {
+  const markdown = exportStudyCards([
+    {
+      review: {
+        title: "插件复盘",
+        concepts: [{ name: "Content Script", how_to_learn: "写一个注入脚本", why_it_matters: "能读取网页" }],
+        quiz: [{ question: "为什么 API 请求放后台？", answer: "避免页面上下文限制。" }]
+      }
+    }
+  ]);
+
+  assert.match(markdown, /# AfterAI 学习卡片/);
+  assert.match(markdown, /Content Script/);
+  assert.match(markdown, /为什么 API 请求放后台/);
 });

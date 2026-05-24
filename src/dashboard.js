@@ -10,12 +10,20 @@ const statusFilter = document.querySelector("#status-filter");
 const levelFilter = document.querySelector("#level-filter");
 const importRecords = document.querySelector("#import-records");
 const importStatus = document.querySelector("#import-status");
+const abilityRadar = document.querySelector("#ability-radar");
+const dependencySummary = document.querySelector("#dependency-summary");
+const dependencyBar = document.querySelector("#dependency-bar");
+const growthLines = document.querySelector("#growth-lines");
+const mistakeBook = document.querySelector("#mistake-book");
+const exportCards = document.querySelector("#export-cards");
+const exportStatus = document.querySelector("#export-status");
 
 refresh.addEventListener("click", render);
 search.addEventListener("input", render);
 statusFilter.addEventListener("change", render);
 levelFilter.addEventListener("change", render);
 importRecords.addEventListener("change", handleImport);
+exportCards.addEventListener("click", handleExportCards);
 render();
 
 async function handleImport() {
@@ -43,6 +51,7 @@ async function render() {
   if (!state || !state.ok) return;
 
   const days = state.learningMap || [];
+  const records = state.records || [];
   const favoriteConcepts = state.favoriteConcepts || {};
   const totals = days.reduce((acc, day) => {
     acc.pending += day.pendingCount;
@@ -54,6 +63,7 @@ async function render() {
   statPending.textContent = String(totals.pending);
   statLearned.textContent = String(totals.learned);
   statFavorites.textContent = String(Object.keys(favoriteConcepts).length);
+  renderInsights(records);
   empty.hidden = days.length > 0;
   markFavorites(days, favoriteConcepts);
   const filteredDays = applyFilters(days);
@@ -69,6 +79,107 @@ async function render() {
     noMatch.append(title, copy);
     timeline.appendChild(noMatch);
   }
+}
+
+function renderInsights(records) {
+  const radar = AfterAiShared.buildAbilityRadar(records).filter((item) => item.count > 0);
+  abilityRadar.replaceChildren(...(radar.length ? radar.map(renderRadarRow) : [emptyMini("还没有可归类的知识点")]));
+
+  const dependency = AfterAiShared.buildDependencyStats(records);
+  if (dependency.count) {
+    dependencySummary.textContent = `平均 ${dependency.averageAiDependency}% 依赖 AI，${dependency.count} 次自评`;
+    dependencyBar.style.width = `${dependency.averageAiDependency}%`;
+  } else {
+    dependencySummary.textContent = "在复盘面板里记录一次自评后显示";
+    dependencyBar.style.width = "0%";
+  }
+
+  const growth = AfterAiShared.buildGrowthLines(records).slice(0, 6);
+  growthLines.replaceChildren(...(growth.length ? growth.map(renderGrowthLine) : [emptyMini("重复出现的知识点会在这里连成线")]));
+
+  const mistakes = collectMistakes(records).slice(0, 8);
+  mistakeBook.replaceChildren(...(mistakes.length ? mistakes.map(renderMistake) : [emptyMini("把可疑点加入错题本后会显示在这里")]));
+}
+
+function renderRadarRow(item) {
+  const row = document.createElement("div");
+  row.className = "radar-row";
+  const label = document.createElement("span");
+  label.textContent = `${item.label} · ${item.count}`;
+  const track = document.createElement("div");
+  const bar = document.createElement("i");
+  bar.style.width = `${item.score}%`;
+  track.appendChild(bar);
+  const concepts = document.createElement("small");
+  concepts.textContent = item.concepts.join(" / ");
+  row.append(label, track, concepts);
+  return row;
+}
+
+function renderGrowthLine(line) {
+  const row = document.createElement("div");
+  row.className = "mini-item";
+  const title = document.createElement("strong");
+  title.textContent = `${line.name} · ${line.count} 次`;
+  const copy = document.createElement("p");
+  const first = line.firstAt ? AfterAiShared.dayKey(line.firstAt) : "未知";
+  const last = line.lastAt ? AfterAiShared.dayKey(line.lastAt) : "未知";
+  copy.textContent = `${first} 到 ${last}，最近来自：${line.records.slice(-2).map((item) => item.title).join(" / ")}`;
+  row.append(title, copy);
+  return row;
+}
+
+function renderMistake(item) {
+  const row = document.createElement("div");
+  row.className = "mini-item";
+  const title = document.createElement("strong");
+  title.textContent = item.title;
+  const copy = document.createElement("p");
+  copy.textContent = item.note;
+  row.append(title, copy);
+  return row;
+}
+
+function emptyMini(text) {
+  const item = document.createElement("p");
+  item.className = "mini-empty";
+  item.textContent = text;
+  return item;
+}
+
+function collectMistakes(records) {
+  const items = [];
+  records.forEach((record) => {
+    (record.mistakes || []).forEach((mistake) => {
+      items.push(Object.assign({ source: record.review && record.review.title }, mistake));
+    });
+    const checks = record.review && record.review.assessment && Array.isArray(record.review.assessment.checks)
+      ? record.review.assessment.checks
+      : [];
+    checks.filter((check) => check.judgment === "wrong" || check.judgment === "questionable").forEach((check) => {
+      items.push({
+        title: check.claim || "AI 回答里有一个可疑点",
+        note: check.suggested_fix || check.reason || "需要复查"
+      });
+    });
+  });
+  return items;
+}
+
+async function handleExportCards() {
+  const response = await chrome.runtime.sendMessage({ type: "AFTERAI_EXPORT_STUDY_CARDS" });
+  if (!response || !response.ok) {
+    exportStatus.textContent = "导出失败";
+    return;
+  }
+  const blob = new Blob([response.markdown || ""], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `afterai-study-cards-${new Date().toISOString().slice(0, 10)}.md`;
+  link.click();
+  URL.revokeObjectURL(url);
+  exportStatus.textContent = "已导出 Markdown";
 }
 
 function applyFilters(days) {
@@ -320,7 +431,9 @@ function renderRecords(records) {
     const item = document.createElement("li");
     const text = document.createElement("span");
     const assessment = record.review && record.review.assessment ? ` · ${assessmentLabel(record.review.assessment.verdict)}` : "";
-    text.textContent = `第 ${records.length - index} 轮：${record.review && record.review.title ? record.review.title : record.promptPreview || record.answerPreview || "未命名任务"}${assessment}`;
+    const ability = typeof record.selfAbilityScore === "number" ? ` · 自评 ${record.selfAbilityScore}%` : "";
+    const quality = typeof record.reviewQualityScore === "number" ? ` · 复盘 ${record.reviewQualityScore}%` : "";
+    text.textContent = `第 ${records.length - index} 轮：${record.review && record.review.title ? record.review.title : record.promptPreview || record.answerPreview || "未命名任务"}${assessment}${ability}${quality}`;
 
     const remove = document.createElement("button");
     remove.type = "button";
