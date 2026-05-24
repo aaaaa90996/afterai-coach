@@ -95,6 +95,40 @@ button {
   color: #ffffff;
 }
 
+.import-box {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.import-box h2 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.import-box p,
+#import-status {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.import-box label {
+  background: #ffffff;
+  border: 1px solid rgba(37, 92, 66, 0.2);
+  border-radius: 7px;
+  color: var(--green);
+  cursor: pointer;
+  font-weight: 850;
+  padding: 9px 11px;
+  text-align: center;
+}
+
+.import-box input {
+  display: none;
+}
+
 .workspace {
   padding: 34px clamp(20px, 5vw, 64px);
 }

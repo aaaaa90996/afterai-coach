@@ -8,12 +8,35 @@ const statFavorites = document.querySelector("#stat-favorites");
 const search = document.querySelector("#search");
 const statusFilter = document.querySelector("#status-filter");
 const levelFilter = document.querySelector("#level-filter");
+const importRecords = document.querySelector("#import-records");
+const importStatus = document.querySelector("#import-status");
 
 refresh.addEventListener("click", render);
 search.addEventListener("input", render);
 statusFilter.addEventListener("change", render);
 levelFilter.addEventListener("change", render);
+importRecords.addEventListener("change", handleImport);
 render();
+
+async function handleImport() {
+  const file = importRecords.files && importRecords.files[0];
+  if (!file) return;
+
+  try {
+    const payload = JSON.parse(await file.text());
+    const records = Array.isArray(payload) ? payload : payload.records;
+    const response = await chrome.runtime.sendMessage({
+      type: "AFTERAI_IMPORT_RECORDS",
+      records
+    });
+    if (!response || !response.ok) throw new Error(response && response.error ? response.error : "导入失败");
+    importStatus.textContent = `已导入 ${response.importedCount || 0} 条记录`;
+    importRecords.value = "";
+    await render();
+  } catch (error) {
+    importStatus.textContent = `导入失败：${error && error.message ? error.message : String(error)}`;
+  }
+}
 
 async function render() {
   const state = await chrome.runtime.sendMessage({ type: "AFTERAI_GET_LEARNING_STATE" });

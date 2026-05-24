@@ -3,6 +3,6 @@ output/
 node_modules/
 *.log
 *.tmp
+afterai-agent-review.json
 .DS_Store
 Thumbs.db
-

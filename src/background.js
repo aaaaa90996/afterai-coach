@@ -66,6 +66,10 @@ async function routeMessage(message) {
     return await getLearningState();
   }
 
+  if (message.type === "AFTERAI_IMPORT_RECORDS") {
+    return await importRecords(message.records);
+  }
+
   if (message.type === "AFTERAI_GET_LEARNING_STATE") {
     return await getLearningState();
   }
@@ -290,6 +294,61 @@ async function getLearningState() {
     learnedConcepts,
     favoriteConcepts,
     learningMap: AfterAiShared.buildConversationMap(records, learnedConcepts)
+  };
+}
+
+async function importRecords(records) {
+  const incoming = Array.isArray(records) ? records.map(normalizeImportedRecord).filter(Boolean) : [];
+  if (!incoming.length) return { importedCount: 0 };
+
+  const store = await chrome.storage.local.get([STORAGE_KEYS.records]);
+  const existing = Array.isArray(store[STORAGE_KEYS.records]) ? store[STORAGE_KEYS.records] : [];
+  const byId = new Map(existing.map((record) => [record.id, record]));
+
+  incoming.forEach((record) => {
+    byId.set(record.id, Object.assign({}, byId.get(record.id) || {}, record, {
+      updatedAt: new Date().toISOString()
+    }));
+  });
+
+  const merged = Array.from(byId.values()).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.records]: merged.slice(0, 500)
+  });
+
+  return { importedCount: incoming.length };
+}
+
+function normalizeImportedRecord(record) {
+  if (!record || typeof record !== "object") return null;
+  const now = new Date().toISOString();
+  const createdAt = record.createdAt || now;
+  const prompt = String(record.prompt || "").trim();
+  const answer = String(record.answer || "").trim();
+  if (!prompt && !answer && !record.review) return null;
+
+  const url = String(record.url || "local-agent://task");
+  const site = String(record.site || siteFromUrl(url) || "local-agent");
+  const conversationTitle = String(record.conversationTitle || record.pageTitle || "本地 Agent 任务");
+  const conversationId = String(record.conversationId || AfterAiShared.stableId(`${site}\n${conversationTitle}\n${url}`));
+  const id = String(record.id || AfterAiShared.stableId(`${conversationId}\n${prompt}\n${AfterAiShared.summarizeText(answer, 1200)}`));
+
+  return {
+    id,
+    url,
+    site,
+    pageTitle: String(record.pageTitle || conversationTitle),
+    conversationTitle,
+    conversationId,
+    prompt,
+    answer,
+    promptPreview: String(record.promptPreview || AfterAiShared.summarizeText(prompt, 120) || "本地 Agent 任务"),
+    answerPreview: String(record.answerPreview || AfterAiShared.summarizeText(answer, 180)),
+    createdAt,
+    updatedAt: record.updatedAt || createdAt,
+    day: record.day || AfterAiShared.dayKey(createdAt),
+    taskKind: record.taskKind || AfterAiShared.detectTaskKind(prompt, answer),
+    review: record.review ? AfterAiShared.normalizeCoachPayload(record.review) : null
   };
 }
 
